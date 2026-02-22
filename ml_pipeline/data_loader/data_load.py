@@ -9,7 +9,7 @@ import requests
 
 # Обновил ссылку на актуальный RSS-канал CNBC Top News. Старая могла быть отключена.
 NEWS_FEED_URL = "https://finance.yahoo.com/news/rssindex"
-COLUMNS_TO_SAVE = ['id', 'published', 'title', 'summary']
+COLUMNS_TO_SAVE = ['id', 'published', 'title', 'link']
 
 # Настройка логирования: в production всегда добавляем время и уровень важности сообщения
 logging.basicConfig(
@@ -66,7 +66,7 @@ def data_load(data_path: str) -> None:
 
     # Заполняем пропуски пустой строкой, чтобы метод .map не упал на значениях None/NaN
     df['title'] = df['title'].fillna('').map(html.unescape)
-    df['summary'] = df['summary'].fillna('').map(html.unescape)
+    # df['summary'] = df['summary'].fillna('').map(html.unescape)
 
     # 4. Создание директорий: гарантируем, что папка существует перед сохранением
     output_path = Path(data_path)
