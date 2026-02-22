@@ -27,7 +27,7 @@ dockerops_kwargs = {
         )
     ],
     'retries': 1,
-    'api_version': '1.30',  # Версию API надежнее передавать строкой
+    'api_version': 'auto',  # Версию API надежнее передавать строкой
     'docker_url': 'tcp://docker-socket-proxy:2375',  # Добавлена пропущенная запятая
     'network_mode': 'bridge',
 }
