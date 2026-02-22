@@ -46,7 +46,7 @@ def taskflow():
     news_load = DockerOperator(
         task_id="news_load",
         container_name="task__news_load",
-        image="data_loader:latest",
+        image="data-loader:latest",
         command=f"python data_load.py --data_path {RAW_DATA_PATH}",
         **dockerops_kwargs
     )
