@@ -45,7 +45,6 @@ def taskflow():
     # Task 1: Загрузка сырых данных в формате CSV
     news_load = DockerOperator(
         task_id="news_load",
-        container_name="task__news_load",
         image="data-loader:latest",
         command=f"python data_load.py --data_path {RAW_DATA_PATH}",
         **dockerops_kwargs
@@ -54,7 +53,6 @@ def taskflow():
     # Task 2: Предсказание модели (NLP разметка)
     news_label = DockerOperator(
         task_id="news_label",
-        container_name="task__news_label",
         image="model-prediction:latest",  # Исправлена опечатка (было 'iamge')
         command=f"python model_predict.py --data_path {RAW_DATA_PATH} --pred_path {PRED_DATA_PATH}",
         **dockerops_kwargs
