@@ -1,60 +1,78 @@
+import pendulum
 from airflow.decorators import dag
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator  # Актуальный путь импорта
 from airflow.providers.docker.operators.docker import DockerOperator
-from airflow.utils.dates  import days_ago
 from docker.types import Mount
+
+# Импорт кастомной функции. В реальном проекте файл utils.py
+# должен лежать в папке plugins/ или рядом с DAG в dags/
 from utils import aggregate_predictions
 
-# Объявление путей к данным
-raw_data_path = "opt/airflow/data/raw/data__{{ ds }}.csv"
-pred_data_path = "/opt/airflow/data/predict/labels__{{ ds }}.json"
-result_data_path = "/opt/airflow/data/predict/result__{{ ds }}.json"
+# В production константы всегда выделяют заглавными буквами.
+# Добавлен начальный слеш в RAW_DATA_PATH для формирования абсолютного пути.
+RAW_DATA_PATH = "/opt/airflow/data/raw/data__{{ ds }}.csv"
+PRED_DATA_PATH = "/opt/airflow/data/predict/labels__{{ ds }}.json"
+RESULT_DATA_PATH = "/opt/airflow/data/predict/result__{{ ds }}.json"
 
-dockerops_kwags = {
+# Базовые аргументы для DockerOperator
+dockerops_kwargs = {
     "mount_tmp_dir": False,
     "mounts": [
         Mount(
-            source="C:\Users\belon\PycharmProjects\Airflow_test\data",
+            # Используем r-префикс (raw string), чтобы Windows-пути с обратными
+            # слешами (\) не вызывали ошибку Unicode escape.
+            source=r"C:\Users\belon\PycharmProjects\Airflow_test\data",
             target="/opt/airflow/data/",
             type='bind'
         )
     ],
     'retries': 1,
-    'api_version': 1.30,
-    'docker_url': 'tcp://docker-socket-proxy:2375'
+    'api_version': '1.30',  # Версию API надежнее передавать строкой
+    'docker_url': 'tcp://docker-socket-proxy:2375',  # Добавлена пропущенная запятая
     'network_mode': 'bridge',
 }
 
-@dag("financial_news", start_date=days_ago(0), schedule="@daily", catchup=False)
+
+# Используем pendulum вместо устаревшего days_ago
+@dag(
+    dag_id="financial_news",
+    start_date=pendulum.datetime(2026, 2, 21, tz="UTC"),
+    schedule_interval="@daily",
+    catchup=False,
+    tags=["ds", "nlp", "news_processing"]
+)
 def taskflow():
-    # Task 1
+    # Task 1: Загрузка сырых данных в формате CSV
     news_load = DockerOperator(
         task_id="news_load",
         container_name="task__news_load",
         image="data_loader:latest",
-        command=f"python data_load.py --data_path {raw_data_path}",
-        **dockerops_kwags
+        command=f"python data_load.py --data_path {RAW_DATA_PATH}",
+        **dockerops_kwargs
     )
 
-    # Task 2
+    # Task 2: Предсказание модели (NLP разметка)
     news_label = DockerOperator(
         task_id="news_label",
         container_name="task__news_label",
-        iamge="model-prediction:latest",
-        command=f"python model_predict.py --data_path {raw_data_path} --pred_path {pred_data_path}",
-        **dockerops_kwags
+        image="model-prediction:latest",  # Исправлена опечатка (было 'iamge')
+        command=f"python model_predict.py --data_path {RAW_DATA_PATH} --pred_path {PRED_DATA_PATH}",
+        **dockerops_kwargs
     )
 
-    # Task 3
+    # Task 3: Агрегация результатов
     news_by_topic = PythonOperator(
         task_id="news_by_topic",
         python_callable=aggregate_predictions,
         op_kwargs={
-            'pred_data_path': pred_data_path,
-            'result_data_path': result_data_path,
+            'pred_data_path': PRED_DATA_PATH,
+            'result_data_path': RESULT_DATA_PATH,
         },
     )
 
+    # Задаем строгую последовательность выполнения задач (Pipeline)
     news_load >> news_label >> news_by_topic
 
-taskflow()
+
+# Инициализация графа
+financial_news_dag = taskflow()
