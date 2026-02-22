@@ -31,7 +31,7 @@ def model_predict(data_path: str, pred_path: str) -> None:
     df = pd.read_csv(data_path, sep='\t')
     logging.info('Data read successfully.')
 
-    texts_for_pred = (df.title + '. ' + df.summary).tolist()
+    texts_for_pred = (df.title).tolist()
 
     logging.info('Performing prediction...')
     pred = model_hf(texts_for_pred, LABELS, multi_label=False)
