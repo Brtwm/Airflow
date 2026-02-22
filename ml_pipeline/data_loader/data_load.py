@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 
 # Обновил ссылку на актуальный RSS-канал CNBC Top News. Старая могла быть отключена.
-NEWS_FEED_URL = "https://search.cnbc.com/rs/search/combinedcms/view.xml?profile=120000000&id=100003114"
+NEWS_FEED_URL = "https://finance.yahoo.com/news/rssindex"
 COLUMNS_TO_SAVE = ['id', 'published', 'title', 'summary']
 
 # Настройка логирования: в production всегда добавляем время и уровень важности сообщения
